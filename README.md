@@ -86,6 +86,55 @@ Then answer the questions:
 - Use custom table name? **yes**
 - Enter table name: **my_custom_table**
 
+## 📄 JSON Upload Guide
+
+### 1. JSON File Structure
+The script expects a JSON file where keys are dates and values are lists of products:
+
+```json
+{
+    "2023-10-27": [
+        {
+            "Product name": "Organic Bananas",
+            "Category": "Fruit",
+            "Brand": "Nature's Best",
+            "Days on Shelf": 3,
+            "Price": {
+                "unit": 1.99,
+                "case": 20.00
+            }
+        }
+    ]
+}
+```
+
+### 2. Upload Single JSON File
+
+```python
+from upload_functions import upload_single_json
+
+# Upload and auto-name table (uses filename)
+upload_single_json('data/inventory_2023.json')
+
+# Upload with custom table name
+upload_single_json('data/inventory_2023.json', 'inventory_october')
+```
+
+### 3. Upload All JSON Files from Folder
+
+```python
+from upload_functions import upload_all_json_from_folder
+
+# Uploads all .json files in the folder
+upload_all_json_from_folder('data/json_backups')
+```
+
+### 4. How JSON Data is Flattened
+The script automatically flattens the nested JSON structure:
+- **Date Key** → Becomes `date` column
+- **Product Fields** → Become columns (`product_name`, `category`, etc.)
+- **Nested Price** → Becomes `price_unit`, `price_case`, etc.
+
 ## 📊 What Happens When You Upload?
 
 1. **File Reading**: The script reads your Excel file using pandas
