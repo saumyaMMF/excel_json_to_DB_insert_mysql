@@ -4,7 +4,9 @@ from upload_functions import (
     upload_single_json,
     upload_all_json_from_folder,
     upload_single_excel,
-    upload_all_excel_from_folder
+    upload_all_excel_from_folder,
+    upload_dataframe,
+    delete_data_by_date
 )
 
 def main():
@@ -16,10 +18,12 @@ def main():
         print("2. Upload All Excel Files from Folder")
         print("3. Upload Single JSON File")
         print("4. Upload All JSON Files from Folder")
-        print("5. Exit")
+        print("5. Upload DataFrame (Internal Use)")
+        print("6. Delete Data by Date")
+        print("7. Exit")
         print("-" * 40)
         
-        choice = input("Enter your choice (1-5): ").strip()
+        choice = input("Enter your choice (1-7): ").strip()
         
         if choice == '1':
             file_path = input("Enter path to Excel file: ").strip().strip('"')
@@ -38,8 +42,20 @@ def main():
         elif choice == '4':
             folder_path = input("Enter path to folder containing JSON files: ").strip().strip('"')
             upload_all_json_from_folder(folder_path)
-            
+
         elif choice == '5':
+             print("This option is for internal use or script integration.")
+            
+        elif choice == '6':
+            table_name = input("Enter table name: ").strip()
+            date_value = input("Enter date (YYYY-MM-DD): ").strip()
+            date_col = input("Enter date column name (press Enter for default 'date'): ").strip()
+            
+            print(f"\nDeleting data from '{table_name}' for date '{date_value}'...")
+            result = delete_data_by_date(table_name, date_value, date_col if date_col else 'date')
+            print(f"\n{result}\n")
+            
+        elif choice == '7':
             print("Exiting...")
             break
             

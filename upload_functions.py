@@ -110,10 +110,10 @@ def get_mysql_type(pandas_dtype, column_values):
         return "VARCHAR(255)"
 
 
-def insert_database(table_name, data_frame):
+def upload_dataframe(df, table_name):
     """Insert dataframe into MySQL table with dynamic schema creation."""
     try:
-        df = data_frame.copy()
+        df = df.copy()
         df.drop(df.columns[df.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
         df = safe_convert_for_mysql(df)
 
@@ -246,7 +246,7 @@ def upload_single_json(json_file_path, table_name=None):
         print(f"  Columns: {', '.join(df.columns.tolist())}\n")
         
         print("Inserting data into MySQL...")
-        result = insert_database(table_name, df)
+        result = upload_dataframe(df, table_name)
         print(f"\n{result}\n")
         
     except Exception as e:
@@ -289,7 +289,7 @@ def upload_all_json_from_folder(folder_path):
                 df = flatten_json_to_dataframe(str(file_path))
                 print(f"✓ Loaded {len(df)} rows")
                 
-                result = insert_database(table_name, df)
+                result = upload_dataframe(df, table_name)
                 print(result)
                 
             except Exception as e:
@@ -335,7 +335,7 @@ def upload_single_excel(excel_file_path, table_name=None):
         print(f"  Columns: {', '.join(df.columns.tolist())}\n")
         
         print("Inserting data into MySQL...")
-        result = insert_database(table_name, df)
+        result = upload_dataframe(df, table_name)
         print(f"\n{result}\n")
         
     except Exception as e:
@@ -378,7 +378,7 @@ def upload_all_excel_from_folder(folder_path):
                 df = pd.read_excel(str(file_path))
                 print(f"✓ Loaded {len(df)} rows")
                 
-                result = insert_database(table_name, df)
+                result = upload_dataframe(df, table_name)
                 print(result)
                 
             except Exception as e:
@@ -392,9 +392,66 @@ def upload_all_excel_from_folder(folder_path):
         print(f"✗ Error: {e}")
 
 
+def delete_data_by_date(table_name, date_value, date_column='date'):
+    """
+    Delete rows from a table for a specific date.
+    
+    Args:
+        table_name (str): Name of the table
+        date_value (str): Date string to match (e.g., '2023-10-27')
+        date_column (str): Name of the date column (default: 'date')
+    """
+    try:
+        connection = create_mysql_connection()
+        if not connection:
+            return "Failed to connect to MySQL database"
+            
+        cursor = connection.cursor()
+        
+        # Check if table exists
+        cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
+        if not cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return f"✗ Table '{table_name}' does not exist"
+            
+        # Check if column exists
+        cursor.execute(f"SHOW COLUMNS FROM `{table_name}` LIKE '{date_column}'")
+        if not cursor.fetchone():
+            cursor.close()
+            connection.close()
+            return f"✗ Column '{date_column}' does not exist in table '{table_name}'"
+            
+        # Get count before delete
+        count_sql = f"SELECT COUNT(*) FROM `{table_name}` WHERE `{date_column}` = %s"
+        cursor.execute(count_sql, (date_value,))
+        count = cursor.fetchone()[0]
+        
+        if count == 0:
+            print(f"⚠ No records found for date '{date_value}' in table '{table_name}'")
+            cursor.close()
+            connection.close()
+            return "No records deleted"
+            
+        # Delete
+        delete_sql = f"DELETE FROM `{table_name}` WHERE `{date_column}` = %s"
+        cursor.execute(delete_sql, (date_value,))
+        connection.commit()
+        
+        cursor.close()
+        connection.close()
+        return f"✓ Successfully deleted {count} rows from '{table_name}' for date '{date_value}'"
+        
+    except Exception as e:
+        print(f"✗ Error: {str(e)}")
+        return str(e)
+
+
 print("✓ Upload functions loaded successfully!")
 print("\nAvailable functions:")
 print("  1. upload_single_json(file_path, table_name=None)")
 print("  2. upload_all_json_from_folder(folder_path)")
 print("  3. upload_single_excel(file_path, table_name=None)")
 print("  4. upload_all_excel_from_folder(folder_path)")
+print("  5. upload_dataframe(df, table_name)")
+print("  6. delete_data_by_date(table_name, date_value, date_column='date')")
